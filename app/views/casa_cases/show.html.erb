@@ -2,7 +2,7 @@
 
 <div class="row">
   <div class="col-sm-12 form-header">
-    <h1><%= @casa_case.decorate.transition_aged_youth_icon %> <%= t(".title") %></h1>
+    <h1><%= @casa_case.decorate.transition_aged_youth_icon %> <%= "#{@casa_case.case_number}" %></h1>
     <%- if policy(:case_contact).new? & @casa_case.active? %>
       <%= link_to(t(".button.new_contact"),
                   new_case_contact_path(case_contact: {casa_case_id: @casa_case.id}),
@@ -35,95 +35,115 @@
     <% if !@casa_case.active %>
       <%= render "inactive_case", casa_case: @casa_case %>
     <% end %>
-    <p>
-    <h6><strong><%= t(".label.case_number") %>:</strong> <%= @casa_case.case_number %></h6>
-    </p>
+
+    <div class="card">
+      <div class="card-body">
+        <p>
+        <h6><strong><%= t(".label.transition_aged_youth") %>:</strong> <%= @casa_case.decorate.transition_aged_youth %>
+        </h6>
+        </p>
+      </div>
+    </div>
+
     <% if @casa_case.has_hearing_type? %>
-      <p>
-      <h6><strong><%= t(".label.hearing_type") %>:</strong> <%= @casa_case.hearing_type_name %></h6>
-      </p>
+      <div class="card">
+        <div class="card-body">
+          <p>
+          <h6><strong><%= t(".label.hearing_type") %>:</strong> <%= @casa_case.hearing_type_name %></h6>
+          </p>
+        </div>
+      </div>
     <% end %>
 
     <% if @casa_case.has_judge_name? %>
-      <p>
-      <h6><strong><%= t(".label.judge") %>:</strong> <%= @casa_case.judge_name %></h6>
-      </p>
+      <div class="card">
+        <div class="card-body">
+          <p>
+          <h6><strong><%= t(".label.judge") %>:</strong> <%= @casa_case.judge_name %></h6>
+          </p>
+        </div>
+      </div>
     <% end %>
 
-    <p>
-    <h6><strong><%= t(".label.transition_aged_youth") %>:</strong> <%= @casa_case.decorate.transition_aged_youth %></h6>
-    </p>
-
-    <p>
-    <h6>
-      <strong><%= t(".label.next_court_date") %>:</strong>
-      <%= I18n.l(@casa_case.court_date, format: :day_and_date, default: '') %>
-    </h6>
-    </p>
-
-    <p>
-    <h6>
-      <strong><%= t(".label.court_report_due_date") %>:</strong>
-      <%= I18n.l(@casa_case.court_report_due_date, format: :day_and_date, default: '') %>
-    </h6>
-    </p>
-
-    <p>
-    <h6>
-      <strong><%= t(".label.court_report_status") %>:</strong>
-      <%= @casa_case.decorate.court_report_submission %></h6>
-    </p>
-
-    <% unless @casa_case.court_report_not_submitted? %>
-      <% if @casa_case.court_report_submitted? && @casa_case.court_reports.attached? %>
-        <%= link_to(t(".button.click_to_download"),
-                    rails_blob_path(@casa_case.latest_court_report, disposition: 'attachment')) %>
-      <% end %>
-      <p>
-      <h6>
-        <strong><%= t(".label.court_report_submitted_date") %>:</strong>
-        <%= @casa_case.decorate.court_report_submitted_date %></h6>
-      </p>
-    <% end %>
+    <div class="card">
+      <div class="card-body">
+        <p>
+        <h6>
+          <strong><%= t(".label.next_court_date") %>:</strong>
+          <%= I18n.l(@casa_case.court_date, format: :day_and_date, default: '') %>
+        </h6>
+        </p>
+        <p>
+        <h6>
+          <strong><%= t(".label.court_report_due_date") %>:</strong>
+          <%= I18n.l(@casa_case.court_report_due_date, format: :day_and_date, default: 'Not set by supervisor yet') %>
+        </h6>
+        </p>
+        <p>
+        <h6>
+          <strong><%= t(".label.court_report_status") %>:</strong>
+          <%= @casa_case.decorate.court_report_submission %>
+        </h6>
+        </p>
+        <% unless @casa_case.court_report_not_submitted? %>
+          <% if @casa_case.court_report_submitted? && @casa_case.court_reports.attached? %>
+            <%= link_to(t(".button.click_to_download"),
+                        rails_blob_path(@casa_case.latest_court_report, disposition: 'attachment')) %>
+          <% end %>
+          <p>
+          <h6>
+            <strong><%= t(".label.court_report_submitted_date") %>:</strong>
+            <%= @casa_case.decorate.court_report_submitted_date %></h6>
+          </p>
+        <% end %>
+        <%= render "past_court_dates", casa_case: @casa_case %>
+      </div>
+    </div>
 
     <% if @casa_case.case_court_mandates.exists? %>
-      <h6><strong><%= t(".court_mandates") %>:</strong></h6>
-      <% @casa_case.case_court_mandates.each do |court_mandate| %>
-        <p><%= court_mandate.mandate_text %>, <%= court_mandate.implementation_status&.humanize %></p>
-      <% end %>
+      <div class="card">
+        <div class="card-body">
+          <h6><strong><%= t(".court_mandates") %>:</strong></h6>
+          <ul>
+            <% @casa_case.case_court_mandates.each do |court_mandate| %>
+              <li><%= court_mandate.mandate_text %>, <%= court_mandate.implementation_status&.humanize %></li>
+            <% end %>
+          </ul>
+        </div>
+      </div>
     <% end %>
 
-    <%= render "past_court_dates", casa_case: @casa_case %>
+    <div class="card">
+      <div class="card-body">
+        <h6><strong><%= t(".assigned_volunteers") %>:</strong></h6>
+        <% policy_scope(@casa_case.assigned_volunteers).each_with_index do |volunteer, index| %>
+          <% if current_user.volunteer? %>
+            <p><%= volunteer.display_name %></p>
+          <% else %>
+            <p><%= link_to "#{volunteer.display_name} ", edit_volunteer_path(volunteer) %>
+              <%= link_to t(".send_reminder"),
+                          reminder_volunteer_path(volunteer),
+                          method: :patch,
+                          id: "reminder_button",
+                          class: "btn btn-primary casa-case-button",
+                          data_toggle: "tooltip",
+                          title: "#{t(".tooltip")}" %></p>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+    <br>
+
+    <% if @casa_case.case_contacts.present? %>
+      <div class="text-right mb-2">
+        <%= link_to t(".button.download_all"), casa_case_path(params[:id], format: :csv), class: "btn btn-success" %>
+      </div>
+    <% end %>
 
     <div>
-      <h6><strong><%= t(".assigned_volunteers") %>:</strong></h6>
-      <% policy_scope(@casa_case.assigned_volunteers).each_with_index do |volunteer, index| %>
-        <% if current_user.volunteer? %>
-          <p><%= volunteer.display_name %></p>
-        <% else %>
-          <p><%= link_to "#{volunteer.display_name} ", edit_volunteer_path(volunteer) %>
-            <%= link_to t(".send_reminder"),
-                        reminder_volunteer_path(volunteer),
-                        method: :patch,
-                        id: "reminder_button",
-                        class: "btn btn-primary casa-case-button",
-                        data_toggle: "tooltip",
-                        title: "#{t(".tooltip")}" %></p>
-        <% end %>
-      <% end %>
-      <br>
-
-      <% if @casa_case.case_contacts.present? %>
-        <div class="text-right mb-2">
-          <%= link_to t(".button.download_all"), casa_case_path(params[:id], format: :csv), class: "btn btn-success" %>
-        </div>
-      <% end %>
-
-      <div>
-        <%= render(partial: "case_contacts/case_contact",
-                   collection: @casa_case.decorate.case_contacts_ordered_by_occurred_at.grab_all(current_user),
-                   as: :contact) %>
-      </div>
+      <%= render(partial: "case_contacts/case_contact",
+                 collection: @casa_case.decorate.case_contacts_ordered_by_occurred_at.grab_all(current_user),
+                 as: :contact) %>
     </div>
   </div>
 </div>
