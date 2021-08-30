@@ -164,16 +164,6 @@ class CasaCase < ApplicationRecord
     return false unless errors.messages.empty?
 
     transaction do
-      # if court_report_due_date && court_report_due_date < Date.today
-      #   new_past_court_date = PastCourtDate.new(
-      #     date: court_report_due_date,
-      #     casa_case_id: casa_case.id,
-      #     case_court_mandates: casa_case.case_court_mandates,
-      #     hearing_type_id: casa_case.hearing_type_id,
-      #     judge_id: casa_case.judge_id
-      #   )
-      #   casa_case.past_court_dates << new_past_court_date
-      # end
       casa_case_contact_types.destroy_all
       update(args)
     end
